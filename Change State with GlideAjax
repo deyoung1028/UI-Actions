@@ -1,0 +1,50 @@
+function changeState() {
+    var attachmentConditionMet = false;
+    var mandatoryFieldsConditionMet = false;
+
+    // Check the attachment condition
+    var ga = new GlideAjax("x_755950_disclos_0.getAttachmentsDisclosure");
+    ga.addParam('sysparm_name', 'checkAttachment');
+    ga.addParam('sysparm_sysID', g_form.getUniqueValue());
+    ga.addParam('sysparm_tableName', g_form.getTableName());
+    ga.getXML(function(response) {
+        var answer = response.responseXML.documentElement.getAttribute("answer");
+        if (answer == "false") {
+            g_form.addErrorMessage("You need to add an attachment");
+        } else {
+            attachmentConditionMet = true;
+            checkAndUpdateState();
+        }
+    });
+
+    // Check the mandatory fields condition
+    var uCreateAndAssignedValue = g_form.getValue('u_create_and_assigned');
+    var testFieldValue = g_form.getValue('test_field');
+
+    if (!uCreateAndAssignedValue || !testFieldValue) {
+        g_form.addErrorMessage("Please answer both mandatory questions");
+		checkAndUpdateState();
+    } else {
+        mandatoryFieldsConditionMet = true;
+        checkAndUpdateState();
+    }
+
+    function checkAndUpdateState() {
+        if (attachmentConditionMet && mandatoryFieldsConditionMet) {
+            // Both conditions are met, change the state
+            g_form.setValue('state', 2);
+            g_form.setMandatory('u_create_and_assigned', false);
+            g_form.setMandatory('test_field', false);
+            g_form.save();
+
+
+        } else {
+            // At least one condition is not met, do not change the state
+            g_form.setValue('state', 1); // Set the state back to 'Open' if needed
+            g_form.setMandatory('u_create_and_assigned', true);
+            g_form.setMandatory('test_field', true);
+        }
+
+    }
+
+}
